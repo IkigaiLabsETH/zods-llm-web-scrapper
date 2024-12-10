@@ -1,0 +1,61 @@
+name: Deploy ZODs LLM Web Scrapper to PROD environment
+
+on:
+   workflow_dispatch:
+   push:
+      branches:
+         - master
+
+jobs:
+   deploy-api:
+      runs-on: ubuntu-latest
+      steps:
+         - name: Checkout Repository
+           uses: actions/checkout@v4
+
+         - name: Setup Node.js
+           uses: actions/setup-node@v3
+           with:
+              node-version: '20'
+
+         - name: Deploy ZODs LLM Web Scrapper to PROD environment
+           uses: appleboy/ssh-action@v1.0.3
+           with:
+              host: ${{ vars.VPS_IP_ADDRESS }}
+              username: root
+              key: ${{ secrets.SSH_PRIVATE_KEY }}
+              passphrase: ${{ secrets.SSH_PASSPHRASE }}
+              script: |
+                 cd ~/zods/zods-llm-web-scrapper
+
+                 git reset --hard
+                 git pull origin master
+
+                 # Clean up old environment variables and add new ones
+                 rm -f .env
+                 echo "NODE_ENV=production" >> .env
+                 echo "PORT=5008" >> .env
+                 echo "PLAYWRIGHT_ADBLOCKER=true" >> .env
+                 echo "WEBSEARCH_JAVASCRIPT=true" >> .env
+                 echo "WEBSEARCH_TIMEOUT=${{ vars.WEBSEARCH_TIMEOUT }}" >> .env
+                 echo "METRICS_ENABLED=false" >> .env
+                 echo "METRICS_PORT=5565" >> .env
+                 echo "SERPAPI_KEY=${{ secrets.SERPAPI_KEY }}" >> .env
+                 echo "TASK_MODEL=gpt-4o-mini" >> .env
+                 echo "HF_TOKEN=${{ secrets.HF_ACCESS_TOKEN }}" >> .env
+                 echo "HF_ACCESS_TOKEN=${{ secrets.HF_ACCESS_TOKEN }}" >> .env
+                 echo "HF_API_ROOT=https://api-inference.huggingface.co/models" >> .env
+                 echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+                 echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> .env
+                 echo "ENABLE_ASSISTANTS_RAG=false" >> .env
+                 echo "LLM_SUMMARIZATION=true" >> .env
+                 echo "TOOLS=[]" >> .env
+                 echo "WEBSEARCH_ALLOWLIST=[]" >> .env
+                 echo "WEBSEARCH_BLOCKLIST=['https://youtube.com/']" >> .env
+                 echo "ENABLE_LOCAL_FETCH=false" >> .env
+                 echo "OLD_MODELS=[]" >> .env
+                 echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+                 echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+                 echo "AWS_REGION=${{ vars.AWS_REGION }}" >> .env
+                 echo "AWS_CLOUDWATCH_LOG_GROUP=${{ vars.AWS_CLOUDWATCH_LOG_GROUP }}" >> .env
+
